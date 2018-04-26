@@ -4,7 +4,7 @@ defmodule SaxyParser do
     # xml = String.replace(xml, ~r/\sxmlns=\".*\"/, "", global: false)
    
 
-    Saxy.parse_string(xml, EventHandler, [])
+    Saxy.parse_string(xml, EventHandler, %{})
 
   end
 end
