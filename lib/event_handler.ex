@@ -2,44 +2,65 @@ defmodule EventHandler do
   @behaviour Saxy.Handler
 
   @upper_classes ["ContentAPI", "Sport", "SBClass", "SBType"]
-  @nested_classes ["Ev", "Inplay", "Scores", "Stats", "Incidents", "Teams", "Mkt", "Seln"]
+  @nest_classes ["Ev", "Inplay", "Scores", "Stats", "Incidents", "Teams", "Mkt", "Seln"]
+  @oneline ["PeriodScore", "Stat", "Incident", "Team", "Price"]
 
-  def handle_event(:start_document, prolog, state) do
+  def handle_event(:start_document, prolog, final) do
     IO.inspect("Start parsing document")
-    {:ok, state}
+    {:ok,  {final, [], []}}
   end
 
-  def handle_event(:end_document, _data, state) do
+  def handle_event(:end_document, _data,  {final, acc, stack}) do
     IO.inspect("Finish parsing document")
-    {:ok, state}
+    {:ok, final}
   end
   
-  def handle_event(:start_element, {name, attributes}, state) when name in @upper_classes do
-    {:ok, Map.put(state, name, parse_attributes(attributes))}
+  def handle_event(:start_element, {name, attributes}, {final, acc, stack}) when name in @upper_classes do
+    {:ok, {Map.put(final, name, parse_attributes(attributes)), acc, stack}} 
   end
 
-  def handle_event(:start_element, {name, attributes}, state) when name in @nested_classes do
-    {:ok, Map.put(state, name, parse_attributes(attributes))}
+  def handle_event(:start_element, {name, attributes}, {final, acc, stack}) when name in @oneline do
+    {:ok, {final,  [{name, parse_attributes(attributes)}|acc], stack}}
   end
 
-  def handle_event(:start_element, {name, attributes}, state) do
-    [{parent_name, parent_cont}|rest]=state   
-    {:ok, [{parent_name, [{name, attributes}|parent_cont]} | rest]}
+  def handle_event(:start_element, {name, attributes}, {final, acc, stack}) do
+    {:ok, {final, [{name, parse_attributes(attributes)}|acc], [name | stack]}}
   end
 
-  # def handle_event(:start_element, {name, attributes}, state) do
-  #   IO.inspect("Start parsing element #{name} with attributes #{inspect(attributes)}")
-  #   {:ok, [{name, attributes} | state]}
-  # end
-
-  def handle_event(:end_element, name, state) do
-    {:ok, state}
+   def handle_event(:end_element, name, {final, acc, stack}) when name in @upper_classes do    
+    {:ok, {final, acc, stack}}
+  end
+  
+  def handle_event(:end_element, name, {final, acc, stack}) when name in @oneline do    
+    {:ok, {final, acc, stack}}
   end
 
-  def handle_event(:characters, content, state) do
+  def handle_event(:end_element, name, {final, acc, [h|t]=stack}) do  
+    IO.inspect name
+    {merged, new_acc}=my_merge(acc, name, h)
+    {:ok, {Map.put(final, name, merged), new_acc, t}}
+  end
+  
+  
+
+  def handle_event(:characters, content, {final, acc, stack}) do
     IO.inspect("Receive characters #{content} ")
-    {:ok, [{"Notes:", content}|state]}
+    {:ok, {final, Map.put(acc, "Notes:", content), stack}}
   end
+
+  def my_merge([{acc_name, acc_att}|acc_t], name, last_tag) do
+    IO.inspect {name, acc_name}
+    my_merge(acc_t, name, last_tag, [{acc_name, acc_att}])
+  end
+
+  def my_merge([{acc_name, acc_att}|acc_t], name, last_tag, acc_final) when name == acc_name do
+    {Map.new(acc_final) , acc_t}
+  end
+  def my_merge([{acc_name, acc_att}|acc_t], name, last_tag, acc_final) do
+    my_merge(acc_t, name, last_tag, [{acc_name, acc_att}|acc_final])
+  end
+
+
 
   def parse_attributes(attributes) do
     Enum.reduce(attributes, %{}, fn({key, value}, acc)-> acc=Map.put(acc, key, value) end)
