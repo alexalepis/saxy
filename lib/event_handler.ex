@@ -37,28 +37,44 @@ defmodule EventHandler do
 
   def handle_event(:end_element, name, {final, acc, [h|t]=stack}) do  
     IO.inspect name
-    {merged, new_acc}=my_merge(acc, name, h)
+    {merged, new_acc}=my_merge(acc, name)
     {:ok, {Map.put(final, name, merged), new_acc, t}}
   end
-  
-  
 
-  def handle_event(:characters, content, {final, acc, stack}) do
-    IO.inspect("Receive characters #{content} ")
-    {:ok, {final, Map.put(acc, "Notes:", content), stack}}
-  end
-
-  def my_merge([{acc_name, acc_att}|acc_t], name, last_tag) do
-    IO.inspect {name, acc_name}
-    my_merge(acc_t, name, last_tag, [{acc_name, acc_att}])
+  def my_merge([{acc_name, acc_attr}| acc_rest]=acc, name) do
+    if acc_name==name do
+      {Map.new([{acc_name, acc_attr}]) , acc_rest}
+    else
+      my_merge(acc_rest, name, [{acc_name, acc_attr}])   
+    end
   end
 
-  def my_merge([{acc_name, acc_att}|acc_t], name, last_tag, acc_final) when name == acc_name do
-    {Map.new(acc_final) , acc_t}
+  def my_merge([{acc_name, acc_attr}| acc_rest]=acc, name, to_be_merged) do
+    if acc_name==name do
+      {Map.new([{acc_name, acc_attr}| to_be_merged]), acc_rest}
+    else
+      my_merge(acc_rest, name, [{acc_name, acc_attr}|to_be_merged])   
+    end
   end
-  def my_merge([{acc_name, acc_att}|acc_t], name, last_tag, acc_final) do
-    my_merge(acc_t, name, last_tag, [{acc_name, acc_att}|acc_final])
-  end
+
+  # def my_merge([{acc_name, acc_att}], name, last_tag) do
+  #   IO.inspect {name, acc_name}
+  #   my_merge(acc_t, name, last_tag, [{acc_name, acc_att}])
+  # end
+
+  # def my_merge([{acc_name, acc_att}|acc_t], name, last_tag) do
+  #   IO.inspect {name, acc_name}
+  #   my_merge(acc_t, name, last_tag, [{acc_name, acc_att}])
+  # end
+
+
+
+  # def my_merge([{acc_name, acc_att}|acc_t], name, last_tag, acc_final) when name == acc_name do
+  #   {Map.new(acc_final) , acc_t}
+  # end
+  # def my_merge([{acc_name, acc_att}|acc_t], name, last_tag, acc_final) do
+  #   my_merge(acc_t, name, last_tag, [{acc_name, acc_att}|acc_final])
+  # end
 
 
 
