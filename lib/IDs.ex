@@ -17,15 +17,22 @@ defmodule IDs do
     {"Stat", "name"}
   ]
 
-  def find(tag) do
+  def find(tag, list) do
     [{key, val}|t]=@ids
     case key==tag do
-     true   -> val
-     false -> find(tag, t)
+     true   -> find_in_list(val, list)
+     false -> find(tag, list, t)
     end
   end
 
-  def find(tag, []), do: nil
-  def find(tag, [{key, val}|_t]) when key==tag, do: val 
-  def find(tag, [{key, val}|t]), do: find(tag, t)
+  def find(tag, list, []), do: tag
+  def find(tag, list, [{key, val}|_t]) when key==tag, do: find_in_list(val, list) 
+  def find(tag, list, [{key, val}|t]), do: find(tag, list, t)
+
+  def find_in_list(tag, []), do: tag
+  def find_in_list(tag, [{key, value}|rest]=list) when key==tag, do: value
+  def find_in_list(tag, [{key, value}|rest]=list), do: find_in_list(tag, rest)
+
 end
+
+

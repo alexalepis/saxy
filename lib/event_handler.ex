@@ -24,7 +24,7 @@ defmodule EventHandler do
   end
 
   def handle_event(:start_element, {name, attributes}, {final, acc, stack}) do
-    {:ok, {final, [{name, parse_attributes(attributes)}|acc], [name | stack]}}
+    {:ok, {final, [{{name, IDs.find(name, attributes)}, parse_attributes(attributes)}|acc], [name | stack]}}
   end
 
    def handle_event(:end_element, name, {final, acc, stack}) when name in @upper_classes do    
