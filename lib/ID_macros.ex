@@ -1,4 +1,4 @@
-defmodule ID_Macros do
+defmodule IDs do
   @ids [
     {"Mkt", "mkt_id"},
     {"Seln", "seln_id"},
@@ -17,27 +17,15 @@ defmodule ID_Macros do
     {"Stat", "name"}
   ]
 
-  defmacro not_in_list() do
-    tagname = Macro.var(:tagname, __MODULE__)
-
-    quote do
-      def do_find_id_from_attributes(_, unquote(tagname)) do
-        unquote(nil)
-      end
+  def find(tag) do
+    [{key, val}|t]=@ids
+    case key==tag do
+     true   -> val
+     false -> find(tag, t)
     end
   end
 
-  defmacro in_list() do
-    attrvalue = Macro.var(:attrvalue, __MODULE__)
-
-    @ids
-    |> Enum.map(fn {tagname, attrname} ->
-      quote do
-        def do_find_id_from_attributes({:attribute, unquote(attrname), [], [], unquote(attrvalue)}, unquote(tagname)) do
-          a = unquote(tagname)
-          {a, unquote(attrvalue)}
-        end
-      end
-    end)
-  end
+  def find(tag, []), do: nil
+  def find(tag, [{key, val}|_t]) when key==tag, do: val 
+  def find(tag, [{key, val}|t]), do: find(tag, t)
 end
